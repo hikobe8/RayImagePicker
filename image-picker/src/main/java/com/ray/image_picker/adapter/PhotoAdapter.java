@@ -30,7 +30,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
+    public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder viewHolder, final int i) {
         if (viewHolder instanceof PhotoHolder) {
             ((PhotoHolder)viewHolder).bindData(mPhotos.get(i));
         }
@@ -59,7 +59,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         public void bindData(Photo photo) {
             if (photo != null && !photo.equals(mPhoto)) {
-                Glide.with(itemView.getContext()).load("file:///" + photo.path).asBitmap().into(mImageView);
+                Glide.with(itemView.getContext()).load("file:///" + photo.path).asBitmap().crossFade().into(mImageView);
                 mPhoto = photo;
             }
         }
