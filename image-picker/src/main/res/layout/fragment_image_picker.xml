@@ -9,4 +9,30 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
+    <LinearLayout
+        android:id="@+id/ll_album"
+        android:layout_gravity="bottom"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="#141414"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize">
+
+        <TextView
+            android:text="所有图片"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="?attr/titleTextStyle"/>
+
+        <ImageView
+            android:src="#123456"
+            android:id="@+id/iv_arrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="?attr/actionButtonStyle"/>
+
+    </LinearLayout>
+
 </FrameLayout>

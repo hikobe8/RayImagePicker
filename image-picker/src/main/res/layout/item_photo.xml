@@ -6,7 +6,6 @@
     <com.ray.image_picker.SquareImageView
         android:id="@+id/iv_photo"
         android:background="#050505"
-        android:scaleType="centerCrop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

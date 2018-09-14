@@ -41,15 +41,22 @@ public class ImagePickerFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_image_picker,container, false);
+        return inflater.inflate(R.layout.fragment_image_picker, container, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         RecyclerView recyclerPicker = view.findViewById(R.id.recycler_picker);
-        recyclerPicker.setLayoutManager(new GridLayoutManager(getActivity(), 4));
+        view.findViewById(R.id.ll_album).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+        final GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), 4);
+        recyclerPicker.setLayoutManager(gridLayoutManager);
         recyclerPicker.addItemDecoration(new PhotoItemDecoration());
-        mPhotoAdapter = new PhotoAdapter();
+        mPhotoAdapter = new PhotoAdapter(getActivity(), 4);
         recyclerPicker.setAdapter(mPhotoAdapter);
     }
 
@@ -62,13 +69,13 @@ public class ImagePickerFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof  OnClickListener) {
+        if (context instanceof OnClickListener) {
             mOnClickListener = (OnClickListener) context;
         }
     }
 
     private void loadData() {
-        MediaLoader.getInstance(getContext()).getAllPhotoObservable().subscribe(new Observer<List<Photo>>() {
+        MediaLoader.getInstance(getActivity()).getAllPhotoObservable().subscribe(new Observer<List<Photo>>() {
             @Override
             public void onSubscribe(Disposable d) {
 
