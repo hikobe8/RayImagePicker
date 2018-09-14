@@ -1,38 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycler_picker"
-        android:background="#000"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycler_picker"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000" />
+
+        <FrameLayout
+            android:id="@+id/layout_album"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000"
+            android:orientation="vertical">
+
+            <android.support.v7.widget.RecyclerView
+                android:layout_marginTop="?attr/actionBarSize"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:background="#fff"
+                android:id="@+id/recycler_album"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom" />
+        </FrameLayout>
+
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/ll_album"
-        android:layout_gravity="bottom"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:background="#141414"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize">
+        android:layout_height="?attr/actionBarSize"
+        android:layout_gravity="bottom"
+        android:background="#141414"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp">
 
         <TextView
-            android:text="所有图片"
+            style="?attr/titleTextStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="?attr/titleTextStyle"/>
+            android:textColor="@android:color/white"
+            android:text="所有图片" />
 
         <ImageView
-            android:src="#123456"
             android:id="@+id/iv_arrow"
+            style="?attr/actionButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="?attr/actionButtonStyle"/>
+            android:src="@drawable/ic_arrow_drop_down_black_24dp" />
 
     </LinearLayout>
 
-</FrameLayout>
+</LinearLayout>

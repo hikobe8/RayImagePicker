@@ -76,26 +76,20 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         public void bindData(final Photo photo) {
             if (photo != null && !photo.equals(mPhoto)) {
                 mPhoto = photo;
-                loadImage();
-            }
-        }
-
-        public void loadImage(){
-            if (mPhoto == null)
-                return;
-            mImageView.setTag(R.id.iv_photo, mPhoto.getPath());
-            Glide.with(mContext).load("file:///" + mPhoto.path)
-                    .asBitmap()
-                    .centerCrop()
-                    .crossFade()
-                    .into(new SimpleTarget<Bitmap>(sItemWidth, sItemWidth) {
-                        @Override
-                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                            if (mPhoto.getPath().equals(mImageView.getTag(R.id.iv_photo))) {
-                                mImageView.setImageBitmap(resource);
+                mImageView.setTag(R.id.iv_photo, mPhoto.getPath());
+                Glide.with(mContext).load("file:///" + mPhoto.path)
+                        .asBitmap()
+                        .centerCrop()
+                        .crossFade()
+                        .into(new SimpleTarget<Bitmap>(sItemWidth, sItemWidth) {
+                            @Override
+                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                if (mPhoto.getPath().equals(mImageView.getTag(R.id.iv_photo))) {
+                                    mImageView.setImageBitmap(resource);
+                                }
                             }
-                        }
-                    });
+                        });
+            }
         }
 
     }

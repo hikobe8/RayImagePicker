@@ -16,6 +16,8 @@ import java.util.List;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 /***
  *  Author : ryu18356@gmail.com
@@ -168,6 +170,9 @@ public class MediaLoader {
                 emitter.onComplete();
             }
         });
+//                .subscribeOn(Schedulers.io())
+//                .unsubscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread());
     }
 
     public Observable<List<Album>> getAlbumObservable(){
@@ -178,7 +183,10 @@ public class MediaLoader {
                 emitter.onNext(albums);
                 emitter.onComplete();
             }
-        });
+        })
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     public Observable<List<Photo>> getPhotosByBucktIdObservable(final String bucketId) {
@@ -189,7 +197,10 @@ public class MediaLoader {
                 emitter.onNext(photos);
                 emitter.onComplete();
             }
-        });
+        })
+                .subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
 }
