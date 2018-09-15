@@ -14,11 +14,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.ray.image_picker.adapter.AlbumAdapter;
 import com.ray.image_picker.adapter.PhotoAdapter;
 import com.ray.image_picker.bean.Album;
 import com.ray.image_picker.bean.Photo;
+
+import org.w3c.dom.Text;
 
 import java.util.List;
 
@@ -33,6 +36,8 @@ import io.reactivex.disposables.Disposable;
 public class ImagePickerFragment extends Fragment {
 
     private OnClickListener mOnClickListener;
+    private PhotoAdapter mPhotoAdapter;
+    private AlbumAdapter mAlbumAdapter;
 
     public void setOnClickListener(OnClickListener onClickListener) {
         mOnClickListener = onClickListener;
@@ -42,8 +47,6 @@ public class ImagePickerFragment extends Fragment {
 
     }
 
-    private PhotoAdapter mPhotoAdapter;
-    private AlbumAdapter mAlbumAdapter;
 
     @Nullable
     @Override
@@ -68,6 +71,7 @@ public class ImagePickerFragment extends Fragment {
 
     private void initAlbumLayout(@NonNull View view, RecyclerView recyclerAlbum) {
         final View albumLayout = view.findViewById(R.id.layout_album);
+        final TextView tvAlbum = view.findViewById(R.id.tv_album);
         recyclerAlbum.setLayoutManager(new LinearLayoutManager(getActivity()));
         mAlbumAdapter = new AlbumAdapter(getActivity());
         recyclerAlbum.setAdapter(mAlbumAdapter);
@@ -88,6 +92,37 @@ public class ImagePickerFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 albumLayout.setTranslationY(albumLayout.getTranslationY() == 0 ? albumLayout.getHeight() : 0 );
+            }
+        });
+        mAlbumAdapter.setOnItemClickListener(new AlbumAdapter.OnItemClickListener() {
+            @Override
+            public void onAlbumClick(Album album) {
+                tvAlbum.setText(album.getName());
+                loadImages(album.getId());
+            }
+        });
+    }
+
+    private void loadImages(String id) {
+        MediaLoader.getInstance(getActivity()).getPhotosByBucktIdObservable(id).subscribe(new Observer<List<Photo>>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(List<Photo> photos) {
+                mPhotoAdapter.setData(photos);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
             }
         });
     }

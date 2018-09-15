@@ -26,9 +26,18 @@ import java.util.List;
  */
 public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumHolder> {
 
+    public interface OnItemClickListener{
+        void onAlbumClick(Album album);
+    }
+
     private Context mContext;
     private LayoutInflater mLayoutInflater;
     private List<Album> mAlbumList;
+    private OnItemClickListener mOnItemClickListener;
+
+    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
+        mOnItemClickListener = onItemClickListener;
+    }
 
     public AlbumAdapter(Context context) {
         mContext = context;
@@ -39,7 +48,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumHolder>
     @NonNull
     @Override
     public AlbumHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        return new AlbumHolder(mLayoutInflater.inflate(R.layout.item_album, viewGroup, false), mContext);
+        return new AlbumHolder(mLayoutInflater.inflate(R.layout.item_album, viewGroup, false), mContext, mOnItemClickListener);
     }
 
     @Override
@@ -63,12 +72,21 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumHolder>
         ImageView mIvCover;
         TextView mTvAlbum;
         Context mContext;
+        Album mAlbum;
 
-        AlbumHolder(@NonNull final View itemView, Context context) {
+        AlbumHolder(@NonNull final View itemView, Context context, final OnItemClickListener onItemClickListener) {
             super(itemView);
             mContext = context;
             mIvCover = itemView.findViewById(R.id.iv_album);
             mTvAlbum = itemView.findViewById(R.id.tv_album);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (mAlbum != null && onItemClickListener != null) {
+                        onItemClickListener.onAlbumClick(mAlbum);
+                    }
+                }
+            });
         }
 
         void bindData(Album album) {
@@ -83,6 +101,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumHolder>
                         }
                     });
             mTvAlbum.setText(album.getName());
+            mAlbum = album;
         }
     }
 
