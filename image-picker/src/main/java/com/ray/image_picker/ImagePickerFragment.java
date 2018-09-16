@@ -1,5 +1,8 @@
 package com.ray.image_picker;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,15 +16,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.ray.image_picker.adapter.AlbumAdapter;
 import com.ray.image_picker.adapter.PhotoAdapter;
 import com.ray.image_picker.bean.Album;
 import com.ray.image_picker.bean.Photo;
-
-import org.w3c.dom.Text;
 
 import java.util.List;
 
@@ -38,6 +38,9 @@ public class ImagePickerFragment extends Fragment {
     private OnClickListener mOnClickListener;
     private PhotoAdapter mPhotoAdapter;
     private AlbumAdapter mAlbumAdapter;
+    private ObjectAnimator mAlbumOpenAnim;
+    private ObjectAnimator mAlbumCloseAnim;
+    private boolean mAnimStarted;
 
     public void setOnClickListener(OnClickListener onClickListener) {
         mOnClickListener = onClickListener;
@@ -79,7 +82,43 @@ public class ImagePickerFragment extends Fragment {
             @Override
             public void onGlobalLayout() {
                 if (albumLayout.getHeight() > 0) {
-                        albumLayout.setTranslationY(albumLayout.getHeight());
+                    albumLayout.setTranslationY(albumLayout.getHeight());
+                    //set tag to close
+                    albumLayout.setTag(R.id.layout_album, false);
+                    mAlbumOpenAnim = ObjectAnimator.ofFloat(albumLayout, "translationY", albumLayout.getHeight(), 0);
+                    mAlbumOpenAnim.setDuration(400);
+                    AnimatorListenerAdapter animatorOpenListener = new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            super.onAnimationStart(animation);
+                            mAnimStarted = true;
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            super.onAnimationEnd(animation);
+                            mAnimStarted = false;
+                            albumLayout.setTag(R.id.layout_album, true);
+                        }
+                    };
+                    AnimatorListenerAdapter animatorCloseListener = new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            super.onAnimationStart(animation);
+                            mAnimStarted = true;
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            super.onAnimationEnd(animation);
+                            mAnimStarted = false;
+                            albumLayout.setTag(R.id.layout_album, false);
+                        }
+                    };
+                    mAlbumOpenAnim.addListener(animatorOpenListener);
+                    mAlbumCloseAnim = ObjectAnimator.ofFloat(albumLayout, "translationY", 0, albumLayout.getHeight());
+                    mAlbumCloseAnim.setDuration(400);
+                    mAlbumCloseAnim.addListener(animatorCloseListener);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         albumLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     } else {
@@ -91,7 +130,20 @@ public class ImagePickerFragment extends Fragment {
         view.findViewById(R.id.ll_album).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                albumLayout.setTranslationY(albumLayout.getTranslationY() == 0 ? albumLayout.getHeight() : 0 );
+                if (mAnimStarted)
+                    return;
+                Object tag = albumLayout.getTag(R.id.layout_album);
+                if (tag != null && tag instanceof  Boolean) {
+                    if ((boolean)tag) {
+                        if (mAlbumCloseAnim != null) {
+                            mAlbumCloseAnim.start();
+                        }
+                    } else {
+                        if (mAlbumOpenAnim != null) {
+                            mAlbumOpenAnim.start();
+                        }
+                    }
+                }
             }
         });
         mAlbumAdapter.setOnItemClickListener(new AlbumAdapter.OnItemClickListener() {
@@ -186,4 +238,16 @@ public class ImagePickerFragment extends Fragment {
         });
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (mAlbumOpenAnim != null) {
+            mAlbumOpenAnim.end();
+            mAlbumOpenAnim = null;
+        }
+        if (mAlbumCloseAnim != null) {
+            mAlbumCloseAnim.end();
+            mAlbumCloseAnim = null;
+        }
+    }
 }

@@ -63,6 +63,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     static class PhotoHolder extends RecyclerView.ViewHolder {
 
+        private final SimpleTarget<Bitmap> mBitmapSimpleTarget;
         private Photo mPhoto;
         private ImageView mImageView;
         private Context mContext;
@@ -71,24 +72,27 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             super(itemView);
             mContext = context;
             mImageView = itemView.findViewById(R.id.iv_photo);
+            mBitmapSimpleTarget = new SimpleTarget<Bitmap>(sItemWidth, sItemWidth) {
+                @Override
+                public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                    if (mPhoto.getPath().equals(mImageView.getTag(R.id.iv_photo))) {
+                        mImageView.setImageBitmap(resource);
+                    }
+                }
+            };
         }
 
         public void bindData(final Photo photo) {
             if (photo != null && !photo.equals(mPhoto)) {
                 mPhoto = photo;
                 mImageView.setTag(R.id.iv_photo, mPhoto.getPath());
+                mImageView.setImageResource(android.R.color.black);
                 Glide.with(mContext).load("file:///" + mPhoto.path)
                         .asBitmap()
                         .centerCrop()
+                        .skipMemoryCache(true)
                         .crossFade()
-                        .into(new SimpleTarget<Bitmap>(sItemWidth, sItemWidth) {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                if (mPhoto.getPath().equals(mImageView.getTag(R.id.iv_photo))) {
-                                    mImageView.setImageBitmap(resource);
-                                }
-                            }
-                        });
+                        .into(mBitmapSimpleTarget);
             }
         }
 
