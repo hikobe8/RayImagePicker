@@ -2,7 +2,7 @@ package com.ray.image_picker;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,10 +13,12 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ray.image_picker.adapter.AlbumAdapter;
 import com.ray.image_picker.adapter.PhotoAdapter;
@@ -26,6 +28,7 @@ import com.ray.image_picker.bean.Photo;
 import java.util.List;
 
 import io.reactivex.Observer;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 /***
@@ -38,9 +41,13 @@ public class ImagePickerFragment extends Fragment {
     private OnClickListener mOnClickListener;
     private PhotoAdapter mPhotoAdapter;
     private AlbumAdapter mAlbumAdapter;
-    private ObjectAnimator mAlbumOpenAnim;
-    private ObjectAnimator mAlbumCloseAnim;
+    private ValueAnimator mOpenValueAnim;
+    private ValueAnimator mCloseValueAnim;
     private boolean mAnimStarted;
+    private CompositeDisposable mCompositeDisposable;
+    private View mIvArrow;
+    private View mAlbumLayout;
+    private boolean mIntercept;
 
     public void setOnClickListener(OnClickListener onClickListener) {
         mOnClickListener = onClickListener;
@@ -50,6 +57,11 @@ public class ImagePickerFragment extends Fragment {
 
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mCompositeDisposable = new CompositeDisposable();
+    }
 
     @Nullable
     @Override
@@ -63,66 +75,104 @@ public class ImagePickerFragment extends Fragment {
         final RecyclerView recyclerAlbum = view.findViewById(R.id.recycler_album);
         initAlbumLayout(view, recyclerAlbum);
         initPhotosLayout(recyclerPicker);
+        mIvArrow = view.findViewById(R.id.iv_arrow);
     }
 
     private void initPhotosLayout(RecyclerView recyclerPicker) {
         recyclerPicker.setLayoutManager(new GridLayoutManager(getActivity(), 4));
         recyclerPicker.addItemDecoration(new PhotoItemDecoration());
         mPhotoAdapter = new PhotoAdapter(getActivity(), 4);
+        mPhotoAdapter.setOnPhotoClickListener(new PhotoAdapter.OnPhotoClickListener() {
+            @Override
+            public void onPhotoItemClick(Photo photo) {
+                Toast.makeText(getActivity(), photo.getPath(), Toast.LENGTH_SHORT).show();
+            }
+        });
         recyclerPicker.setAdapter(mPhotoAdapter);
     }
 
-    private void initAlbumLayout(@NonNull View view, RecyclerView recyclerAlbum) {
-        final View albumLayout = view.findViewById(R.id.layout_album);
+    private void initAlbumLayout(@NonNull final View view, RecyclerView recyclerAlbum) {
+        mAlbumLayout = view.findViewById(R.id.layout_album);
         final TextView tvAlbum = view.findViewById(R.id.tv_album);
+        final View maskView = view.findViewById(R.id.layout_mask);
+        maskView.setAlpha(0);
+        maskView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                closeAlbum();
+                return mIntercept;
+            }
+        });
         recyclerAlbum.setLayoutManager(new LinearLayoutManager(getActivity()));
         mAlbumAdapter = new AlbumAdapter(getActivity());
         recyclerAlbum.setAdapter(mAlbumAdapter);
-        albumLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+        mAlbumLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
-                if (albumLayout.getHeight() > 0) {
-                    albumLayout.setTranslationY(albumLayout.getHeight());
+                if (mAlbumLayout.getHeight() > 0) {
+                    mAlbumLayout.setTranslationY(mAlbumLayout.getHeight());
                     //set tag to close
-                    albumLayout.setTag(R.id.layout_album, false);
-                    mAlbumOpenAnim = ObjectAnimator.ofFloat(albumLayout, "translationY", albumLayout.getHeight(), 0);
-                    mAlbumOpenAnim.setDuration(400);
+                    mAlbumLayout.setTag(R.id.layout_album, false);
+                    //open
                     AnimatorListenerAdapter animatorOpenListener = new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationStart(Animator animation) {
                             super.onAnimationStart(animation);
                             mAnimStarted = true;
+                            mIntercept = true;
                         }
 
                         @Override
                         public void onAnimationEnd(Animator animation) {
                             super.onAnimationEnd(animation);
                             mAnimStarted = false;
-                            albumLayout.setTag(R.id.layout_album, true);
+                            mAlbumLayout.setTag(R.id.layout_album, true);
                         }
                     };
+                    mOpenValueAnim = ValueAnimator.ofFloat(mAlbumLayout.getHeight(), 0);
+                    mOpenValueAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            mAlbumLayout.setTranslationY((Float) animation.getAnimatedValue());
+                            maskView.setAlpha((1 - mAlbumLayout.getTranslationY()/ mAlbumLayout.getHeight()) * 1f);
+                            mIvArrow.setRotation(animation.getAnimatedFraction() * 180);
+                        }
+                    });
+                    mOpenValueAnim.setDuration(400);
+                    mOpenValueAnim.addListener(animatorOpenListener);
+
+                    //close
                     AnimatorListenerAdapter animatorCloseListener = new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationStart(Animator animation) {
                             super.onAnimationStart(animation);
                             mAnimStarted = true;
+                            mIntercept = true;
                         }
 
                         @Override
                         public void onAnimationEnd(Animator animation) {
                             super.onAnimationEnd(animation);
                             mAnimStarted = false;
-                            albumLayout.setTag(R.id.layout_album, false);
+                            mIntercept = false;
+                            mAlbumLayout.setTag(R.id.layout_album, false);
                         }
                     };
-                    mAlbumOpenAnim.addListener(animatorOpenListener);
-                    mAlbumCloseAnim = ObjectAnimator.ofFloat(albumLayout, "translationY", 0, albumLayout.getHeight());
-                    mAlbumCloseAnim.setDuration(400);
-                    mAlbumCloseAnim.addListener(animatorCloseListener);
+                    mCloseValueAnim = ValueAnimator.ofFloat(0, mAlbumLayout.getHeight());
+                    mCloseValueAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            mAlbumLayout.setTranslationY((Float) animation.getAnimatedValue());
+                            maskView.setAlpha((1 - animation.getAnimatedFraction()) * 1f);
+                            mIvArrow.setRotation(180 + animation.getAnimatedFraction() * 180);
+                        }
+                    });
+                    mCloseValueAnim.setDuration(400);
+                    mCloseValueAnim.addListener(animatorCloseListener);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        albumLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        mAlbumLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     } else {
-                        albumLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                        mAlbumLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
                     }
                 }
             }
@@ -132,15 +182,15 @@ public class ImagePickerFragment extends Fragment {
             public void onClick(View v) {
                 if (mAnimStarted)
                     return;
-                Object tag = albumLayout.getTag(R.id.layout_album);
+                Object tag = mAlbumLayout.getTag(R.id.layout_album);
                 if (tag != null && tag instanceof  Boolean) {
                     if ((boolean)tag) {
-                        if (mAlbumCloseAnim != null) {
-                            mAlbumCloseAnim.start();
+                        if (mCloseValueAnim != null) {
+                            mCloseValueAnim.start();
                         }
                     } else {
-                        if (mAlbumOpenAnim != null) {
-                            mAlbumOpenAnim.start();
+                        if (mOpenValueAnim != null) {
+                            mOpenValueAnim.start();
                         }
                     }
                 }
@@ -151,15 +201,29 @@ public class ImagePickerFragment extends Fragment {
             public void onAlbumClick(Album album) {
                 tvAlbum.setText(album.getName());
                 loadImages(album.getId());
+                closeAlbum();
             }
         });
+    }
+
+    private void closeAlbum() {
+        if (mAnimStarted)
+            return;
+        Object tag = mAlbumLayout.getTag(R.id.layout_album);
+        if (tag != null && tag instanceof  Boolean) {
+            if ((boolean)tag) {
+                if (mCloseValueAnim != null) {
+                    mCloseValueAnim.start();
+                }
+            }
+        }
     }
 
     private void loadImages(String id) {
         MediaLoader.getInstance(getActivity()).getPhotosByBucktIdObservable(id).subscribe(new Observer<List<Photo>>() {
             @Override
             public void onSubscribe(Disposable d) {
-
+                mCompositeDisposable.add(d);
             }
 
             @Override
@@ -197,7 +261,7 @@ public class ImagePickerFragment extends Fragment {
         MediaLoader.getInstance(getActivity()).getAllPhotoObservable().subscribe(new Observer<List<Photo>>() {
             @Override
             public void onSubscribe(Disposable d) {
-
+                mCompositeDisposable.add(d);
             }
 
             @Override
@@ -218,7 +282,7 @@ public class ImagePickerFragment extends Fragment {
         MediaLoader.getInstance(getActivity()).getAlbumObservable().subscribe(new Observer<List<Album>>() {
             @Override
             public void onSubscribe(Disposable d) {
-
+                mCompositeDisposable.add(d);
             }
 
             @Override
@@ -241,13 +305,16 @@ public class ImagePickerFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (mAlbumOpenAnim != null) {
-            mAlbumOpenAnim.end();
-            mAlbumOpenAnim = null;
+        if (mOpenValueAnim != null) {
+            mOpenValueAnim.end();
+            mOpenValueAnim = null;
         }
-        if (mAlbumCloseAnim != null) {
-            mAlbumCloseAnim.end();
-            mAlbumCloseAnim = null;
+        if (mCloseValueAnim != null) {
+            mCloseValueAnim.end();
+            mCloseValueAnim = null;
+        }
+        if (mCompositeDisposable != null && !mCompositeDisposable.isDisposed()) {
+            mCompositeDisposable.dispose();
         }
     }
 }

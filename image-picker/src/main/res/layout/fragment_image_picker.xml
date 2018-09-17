@@ -16,10 +16,15 @@
             android:background="#000" />
 
         <FrameLayout
+            android:id="@+id/layout_mask"
+            android:background="#b4000000"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <FrameLayout
             android:id="@+id/layout_album"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#80000000"
             android:orientation="vertical">
 
             <android.support.v7.widget.RecyclerView
@@ -31,6 +36,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom" />
+
         </FrameLayout>
 
     </FrameLayout>
